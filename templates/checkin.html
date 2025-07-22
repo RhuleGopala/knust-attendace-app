@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Check-in</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function getLocationAndSubmit() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser. Please use a modern browser.");
+                document.getElementById('status-message').innerText = "Geolocation not supported.";
+                document.getElementById('submit-btn').disabled = true;
+                return;
+            }
+
+            // Display loading message
+            document.getElementById('status-message').innerText = "Getting your location...";
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').style.opacity = '0.5'; // Visually disable
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    
+                    document.getElementById('status-message').innerText = "Location obtained. Submitting attendance...";
+
+                    // Get other form data
+                    const studentId = "{{ student_id }}";
+                    const studentName = document.getElementById('student_name').value;
+                    const studentIndex = document.getElementById('student_index').value;
+
+                    // Basic validation for name and index
+                    if (!studentName.trim() || !studentIndex.trim()) {
+                        let errorMessage = "Please fill in both your Name and Index Number.";
+                        alert(errorMessage);
+                        document.getElementById('status-message').innerText = errorMessage;
+                        document.getElementById('submit-btn').disabled = false;
+                        document.getElementById('submit-btn').style.opacity = '1';
+                        return;
+                    }
+
+                    $.ajax({
+                        url: "{{ url_for('submit_attendance') }}",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            student_id: studentId,
+                            student_name: studentName,
+                            student_index: studentIndex,
+                            latitude: latitude,
+                            longitude: longitude
+                        }),
+                        success: function(response) {
+                            alert(response.message);
+                            document.getElementById('status-message').innerText = response.message;
+                            if (response.status === 'success') {
+                                // Optionally disable form after successful submission
+                                document.getElementById('student_name').disabled = true;
+                                document.getElementById('student_index').disabled = true;
+                                document.getElementById('submit-btn').disabled = true;
+                                document.getElementById('submit-btn').style.display = 'none'; // Hide button
+                                document.getElementById('attendanceForm').style.pointerEvents = 'none'; // Disable entire form
+                                document.getElementById('attendanceForm').style.opacity = '0.7'; // Fade out form
+                            } else {
+                                document.getElementById('submit-btn').disabled = false; // Re-enable if submission failed
+                                document.getElementById('submit-btn').style.opacity = '1';
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Submission error:", xhr.responseText);
+                            let errorMessage = "An unexpected error occurred during submission. Please try again.";
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                if (errorResponse && errorResponse.message) {
+                                    errorMessage = errorResponse.message;
+                                }
+                            } catch (e) {
+                                // Fallback to generic message
+                            }
+                            alert(errorMessage);
+                            document.getElementById('status-message').innerText = errorMessage;
+                            document.getElementById('submit-btn').disabled = false; // Re-enable button
+                            document.getElementById('submit-btn').style.opacity = '1';
+                        }
+                    });
+                },
+                function(error) {
+                    let errorMessage = "Error getting location: ";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += "You denied permission for Geolocation. Please allow location access for this page.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += "Location information is unavailable. Try moving to an open area.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += "The request to get your location timed out. Your connection might be slow.";
+                            break;
+                        default:
+                            errorMessage += "An unknown error occurred.";
+                            break;
+                    }
+                    alert(errorMessage + " Please ensure location services are enabled and permitted, then refresh the page.");
+                    document.getElementById('status-message').innerText = errorMessage;
+                    document.getElementById('submit-btn').disabled = false; // Re-enable button
+                    document.getElementById('submit-btn').style.opacity = '1';
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // High accuracy, 10s timeout, no cache
+            );
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Check-in</h1>
+        
+        {% if message_override %}
+            <div class="message error-message">
+                <p>{{ message_override }}</p>
+                <p>Please contact your lecturer for assistance if needed.</p>
+            </div>
+        {% else %}
+            <p><strong>Your Student ID:</strong> {{ student_id }}</p>
+            <p><strong>Active Session ID:</strong> {{ lecturer_conf.session_id }}</p>
+            <p>Please fill in your details to mark your attendance.</p>
+
+            <form id="attendanceForm">
+                <div class="form-group">
+                    <label for="student_name">Your Name:</label>
+                    <input type="text" id="student_name" name="student_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="student_index">Your Index Number:</label>
+                    <input type="text" id="student_index" name="student_index" required>
+                </div>
+                <button type="button" id="submit-btn" onclick="getLocationAndSubmit()">Mark Attendance</button>
+                <p id="status-message" style="margin-top: 15px;"></p>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>

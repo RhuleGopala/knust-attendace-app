@@ -1,0 +1,366 @@
+/* static/style.css */
+
+/* Variables for easy theme changes */
+:root {
+    --primary-color: #007bff; /* Changed to Bootstrap blue for consistency with info/primary btn */
+    --secondary-color: #6c757d; /* Changed to Bootstrap secondary grey */
+    --background-color: #F8F9FA; /* Lighter grey, Bootstrap light */
+    --card-background: #FFFFFF; /* White for cards/forms */
+    --text-color: #212529; /* Dark grey for text */
+    --light-text-color: #6c757d; /* Lighter grey for secondary text */
+    --border-color: #dee2e6; /* Light grey border */
+    --success-color: #28a745; /* Green for success messages */
+    --error-color: #dc3545; /* Red for error messages */
+    --info-color: #17a2b8; /* Blue for info messages */
+    --warning-color: #ffc107; /* Orange for warning messages */
+    --box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); /* Soft shadow, Bootstrap-like */
+    --border-radius: .375rem; /* Rounded corners for elements, Bootstrap default */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Changed for broader compatibility, similar to Inter if not imported */
+}
+
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box; /* Include padding in element's total width and height */
+}
+
+/* Header (using Bootstrap's navbar, so less custom CSS needed here) */
+/* .main-header is replaced by Bootstrap's .navbar and .bg-primary */
+.navbar-brand .fas { /* Style for the icon in the navbar brand */
+    font-size: 1.2em;
+}
+
+/* Main Content Area */
+.content { /* This might be redundant if using <main> in base.html with Bootstrap padding */
+    flex-grow: 1;
+    padding: 40px 0;
+}
+
+/* Headings */
+h1, h2, h3 {
+    color: var(--primary-color); /* Changed to primary color for emphasis */
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* Forms and Inputs */
+form {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-top: 30px;
+}
+
+form div {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--light-text-color);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    box-sizing: border-box; /* Ensures padding doesn't add to total width */
+    font-family: var(--font-family);
+    color: var(--text-color);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Bootstrap focus style */
+}
+
+small {
+    display: block;
+    color: var(--light-text-color);
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+/* Buttons (relying on Bootstrap classes primarily, but ensuring overrides) */
+.btn {
+    display: inline-block;
+    padding: 12px 25px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    -webkit-appearance: none; /* For consistent button styling across browsers */
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.btn-primary { /* Overrides Bootstrap .btn-primary */
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #0056b3; /* Slightly darker primary */
+    border-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.btn-info { /* Overrides Bootstrap .btn-info */
+    background-color: var(--info-color);
+    color: #fff;
+    border-color: var(--info-color);
+}
+.btn-info:hover {
+    background-color: #117a8b;
+    border-color: #10707f;
+    transform: translateY(-2px);
+}
+
+.btn-warning { /* Overrides Bootstrap .btn-warning */
+    background-color: var(--warning-color);
+    color: #212529; /* Dark text for warning background */
+    border-color: var(--warning-color);
+}
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    transform: translateY(-2px);
+}
+
+.btn-secondary { /* Uses existing variable, matches Bootstrap secondary */
+    background-color: var(--secondary-color);
+    color: #fff;
+    border-color: var(--secondary-color);
+    margin-left: 10px; /* Keep your margin if desired */
+}
+
+.btn-secondary:hover {
+    background-color: #545b62; /* Slightly darker secondary */
+    border-color: #4e555b;
+    transform: translateY(-2px);
+}
+
+
+/* Buttons container */
+.buttons-container {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+    margin-top: 20px;
+}
+
+/* Messages (Success/Error/Info) - Using Bootstrap .alert classes */
+/* No need for custom .message, .message .icon, .message.success, etc. if using Bootstrap's .alert */
+/* The base.html already outputs alerts with Bootstrap classes like alert-success, alert-danger */
+
+/* Summary Boxes / Cards - using Bootstrap .card classes */
+.summary-box { /* This might be redundant if using .card directly */
+    background-color: var(--card-background);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 20px;
+}
+
+.summary-box h2 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 1.5em;
+}
+
+/* Dashboard Table */
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    overflow: hidden; /* Ensures rounded corners apply to table */
+    box-shadow: var(--box-shadow);
+}
+
+.attendance-table th,
+.attendance-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.attendance-table th {
+    background-color: var(--primary-color); /* Changed to primary color */
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+.attendance-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.attendance-table tbody tr:hover {
+    background-color: #f7f7f7;
+}
+
+.status-present {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.status-absent {
+    color: var(--error-color);
+    font-weight: 600;
+}
+
+/* Footer */
+footer {
+    background-color: var(--secondary-color); /* Matches Bootstrap secondary */
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: auto; /* Pushes footer to the bottom */
+    font-size: 0.9em;
+}
+
+footer p {
+    margin: 5px 0;
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+/* NEW STYLES FOR LANDING PAGE */
+.display-4 { /* Ensure display-4 is primary colored for consistency */
+    color: var(--primary-color) !important;
+}
+
+.image-placeholder {
+    background-color: #f8f9fa; /* Light background */
+    border: 2px dashed var(--primary-color); /* Dashed primary color border */
+    border-radius: var(--border-radius);
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 180px; /* Adjust height as needed */
+    flex-direction: column;
+}
+
+.image-placeholder img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Ensures the image fits without cropping */
+}
+
+.image-placeholder p {
+    margin: 0;
+    color: var(--light-text-color);
+}
+
+.card.h-100 { /* For consistent card heights on landing page */
+    min-height: 250px; /* Or adjust as desired */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Keep your existing media queries as they are generally good */
+    .main-header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .main-nav {
+        margin-top: 15px;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .main-nav .nav-link {
+        margin: 5px 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .content {
+        padding: 20px 0;
+    }
+
+    form, .summary-box, .attendance-table {
+        margin: 20px 10px;
+        padding: 20px;
+    }
+
+    .buttons-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-title {
+        font-size: 1.5em;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    h2 {
+        font-size: 1.3em;
+    }
+
+    .message {
+        font-size: 0.9em;
+        padding: 12px 15px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+}

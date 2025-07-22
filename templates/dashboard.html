@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturer Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Basic styling for session list */
+        .session-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        .session-list li {
+            background-color: #f5f5f5;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        /* Specific status styling */
+        .session-list li.active { background-color: #d4edda; border: 1px solid #28a745; }
+        .session-list li.paused { background-color: #fff3cd; border: 1px solid #ffc107; }
+        .session-list li.closed { background-color: #f8d7da; border: 1px solid #dc3545; }
+        
+        .session-details { 
+            flex-grow: 1; 
+            margin-right: 10px; /* Space between details and buttons */
+            margin-bottom: 5px; /* For wrapping */
+        }
+        .session-details .session-id { 
+            font-weight: bold; 
+            font-size: 1.1em;
+            word-break: break-all; /* Break long IDs */
+        }
+        .session-details .status { 
+            text-transform: capitalize; 
+            margin-left: 10px;
+            font-style: italic;
+        }
+        .session-details small {
+            display: block; /* Make small tags block for better readability */
+            font-size: 0.9em;
+            color: #666;
+        }
+        .session-actions {
+            display: flex;
+            gap: 5px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap */
+        }
+        .session-actions form {
+            display: inline-block;
+            margin: 0; /* Remove default form margin */
+        }
+        .session-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+            white-space: nowrap; /* Prevent button text from wrapping */
+        }
+        .session-actions .btn-active { background-color: #28a745; color: white; }
+        .session-actions .btn-pause { background-color: #ffc107; color: black; }
+        .session-actions .btn-close { background-color: #dc3545; color: white; }
+
+        @media (max-width: 768px) {
+            .session-list li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .session-details {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            .session-actions {
+                width: 100%; /* Buttons take full width below details */
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lecturer Dashboard</h1>
+        
+        <nav>
+            <a href="{{ url_for('lecturer_config_route') }}">Configure Session</a> | 
+            <a href="{{ url_for('qr_generator_page') }}">QR Generator</a> | 
+            <a href="{{ url_for('dashboard') }}">Dashboard</a> | 
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <div class="dashboard-section">
+            <h2>Current Active Session Summary</h2>
+            {% if current_session.session_id %}
+                <p><strong>Configured Session ID:</strong> {{ current_session.session_id }}</p>
+                <p><strong>Location:</strong> {{ current_session.latitude }}, {{ current_session.longitude }} (Radius: {{ current_session.radius }}m)</p>
+                <p><strong>Total Scans (for Configured Session):</strong> {{ total_scans_session }}</p>
+                <p><strong>Present Students (for Configured Session):</strong> {{ present_count }}</p>
+                <p><strong>Absent Students (for Configured Session):</strong> {{ absent_count }}</p>
+                <p><strong>Total Portal Accesses (for Configured Session):</strong> {{ total_portal_accesses }}</p>
+                <p><strong>Unique Portal Students (for Configured Session):</strong> {{ unique_portal_students }}</p>
+            {% else %}
+                <p>No session is currently configured for this system. Please go to <a href="{{ url_for('lecturer_config_route') }}">Configure Session</a> to set one up.</p>
+            {% endif %}
+        </div>
+
+        <div class="dashboard-section">
+            <h2>All Created Attendances (Sessions)</h2>
+            {% if all_sessions %}
+                <ul class="session-list">
+                    {% for session_item in all_sessions %}
+                        <li class="{{ session_item.status }}">
+                            <div class="session-details">
+                                <span class="session-id">{{ session_item.session_id }}</span>
+                                <span class="status">({{ session_item.status }})</span>
+                                <br>
+                                <small>Created: {{ moment(session_item.created_at).calendar() if session_item.created_at else 'N/A' }}</small>
+                                {% if session_item.closed_at %}
+                                    <small> | Closed/Paused: {{ moment(session_item.closed_at).calendar() }}</small>
+                                {% endif %}
+                                <br>
+                                <small>Lat: {{ session_item.latitude }}, Lon: {{ session_item.longitude }}, Radius: {{ session_item.radius }}m</small>
+                            </div>
+                            <div class="session-actions">
+                                {% if session_item.status != 'active' %}
+                                    <form method="POST" action="{{ url_for('update_session_status') }}">
+                                        <input type="hidden" name="session_id" value="{{ session_item.session_id }}">
+                                        <input type="hidden" name="status" value="active">
+                                        <button type="submit" class="btn-active">Activate</button>
+                                    </form>
+                                {% endif %}
+                                {% if session_item.status != 'paused' %}
+                                    <form method="POST" action="{{ url_for('update_session_status') }}">
+                                        <input type="hidden" name="session_id" value="{{ session_item.session_id }}">
+                                        <input type="hidden" name="status" value="paused">
+                                        <button type="submit" class="btn-pause">Pause</button>
+                                    </form>
+                                {% endif %}
+                                {% if session_item.status != 'closed' %}
+                                    <form method="POST" action="{{ url_for('update_session_status') }}">
+                                        <input type="hidden" name="session_id" value="{{ session_item.session_id }}">
+                                        <input type="hidden" name="status" value="closed">
+                                        <button type="submit" class="btn-close">Close</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No attendance sessions have been created yet. Configure a new session to begin tracking attendance.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

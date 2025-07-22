@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturer Configuration - Attendance System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center">Lecturer Configuration</h1>
+
+    {% if message %}
+        <div class="message {{ message_type }}">
+            {% if message_type == "success" %}<i class="fas fa-check-circle icon"></i>{% endif %}
+            {% if message_type == "error" %}<i class="fas fa-times-circle icon"></i>{% endif %}
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+        <h2>Set Session Location & Radius</h2>
+        <div>
+            <label for="latitude">Class Latitude:</label>
+            <input type="number" id="latitude" name="latitude" step="any" required
+                   value="{{ config.latitude if config.latitude is not none else '' }}"
+                   placeholder="e.g., 5.6037">
+            <small>Geographical latitude of the classroom.</small>
+        </div>
+        <div>
+            <label for="longitude">Class Longitude:</label>
+            <input type="number" id="longitude" name="longitude" step="any" required
+                   value="{{ config.longitude if config.longitude is not none else '' }}"
+                   placeholder="e.g., -0.1870">
+            <small>Geographical longitude of the classroom.</small>
+        </div>
+        <div class="buttons-container" style="justify-content: flex-start;">
+            <button type="button" class="btn btn-secondary" onclick="getLecturerLocation()">
+                <i class="fas fa-map-marker-alt"></i> Use My Current Location
+            </button>
+        </div>
+        <div>
+            <label for="radius">Allowed Radius (meters):</label>
+            <input type="number" id="radius" name="radius" required
+                   value="{{ config.radius if config.radius is not none else '' }}"
+                   placeholder="e.g., 50">
+            <small>Students within this distance from the class location will be marked present.</small>
+        </div>
+        <div>
+            <label for="session_id">Session ID (Optional):</label>
+            <input type="text" id="session_id" name="session_id"
+                   value="{{ config.session_id if config.session_id is not none else '' }}"
+                   placeholder="e.g., CSC101_Midterm">
+            <small>Leave blank to auto-generate based on time.</small>
+        </div>
+        <div class="buttons-container">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Configuration
+            </button>
+            <a href="{{ url_for('qr_generator_page') }}" class="btn btn-secondary">
+                <i class="fas fa-qrcode"></i> Go to QR Generator
+            </a>
+        </div>
+    </form>
+
+    {% if config and config.latitude is not none %}
+        <div class="summary-box" style="margin-top: 30px;">
+            <h2>Current Active Session</h2>
+            <p><strong>Session ID:</strong> {{ config.session_id | default('N/A') }}</p>
+            <p><strong>Class Location:</strong> {{ config.latitude }}, {{ config.longitude }}</p>
+            <p><strong>Allowed Radius:</strong> {{ config.radius }} meters</p>
+            <small>This configuration is currently active for student check-ins.</small>
+        </div>
+    {% else %}
+        <p class="message info" style="margin-top: 30px;"><i class="fas fa-info-circle icon"></i> No session configured yet. Please enter details above.</p>
+    {% endif %}
+
+</div>
+
+<script>
+    function getLecturerLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    document.getElementById('latitude').value = position.coords.latitude;
+                    document.getElementById('longitude').value = position.coords.longitude;
+                },
+                (error) => {
+                    let message = "Unable to retrieve your location.";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            message += " Please allow location access in your browser settings.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message += " Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            message += " The request to get user location timed out.";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            message += " An unknown error occurred.";
+                            break;
+                    }
+                    alert(message);
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    }
+</script>
+{% endblock %}

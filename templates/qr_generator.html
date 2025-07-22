@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Generate QR Codes - Attendance System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center">Generate Student QR Codes & Links</h1>
+
+    {% if message %}
+        <div class="message {{ message_type }}">
+            {% if message_type == "success" %}<i class="fas fa-check-circle icon"></i>{% endif %}
+            {% if message_type == "error" %}<i class="fas fa-times-circle icon"></i>{% endif %}
+            {{ message }}
+        </div>
+    {% endif %}
+
+    {% if current_session and current_session.latitude is not none %}
+        <div class="summary-box">
+            <h2>Active Session Details</h2>
+            <p><strong>Session ID:</strong> {{ current_session.session_id | default('N/A') }}</p>
+            <p><strong>Class Location:</strong> {{ current_session.latitude }}, {{ current_session.longitude }}</p>
+            <p><strong>Allowed Radius:</strong> {{ current_session.radius }} meters</p>
+            <small>QR codes generated below will be linked to this active session.</small>
+        </div>
+
+        <form method="POST" action="{{ url_for('qr_generator_page') }}">
+            <h2>Generate QR for a Specific Student</h2>
+            <div>
+                <label for="student_id_qr">Student ID:</label>
+                <input type="text" id="student_id_qr" name="student_id_qr" required
+                        placeholder="e.g., S001">
+                <small>Enter a student ID to generate their unique check-in QR code.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Generate QR Code & Link</button>
+        </form>
+
+        {% if qr_code_path and generated_link %}
+            <div class="summary-box" style="margin-top: 30px;">
+                <h2>Generated for Student: {{ student_id_display }}</h2>
+                <div class="text-center">
+                    {# CORRECTED LINE: Removed redundant url_for('static', filename=...) #}
+                    <img src="{{ qr_code_path }}" alt="QR Code" style="width: 250px; height: 250px; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px;">
+                    <p style="font-size: 1.1em; word-break: break-all;">
+                        **Student Link:** <a href="{{ generated_link }}" target="_blank">{{ generated_link }}</a>
+                    </p>
+                    <small>Students can scan this QR code or click the link to check their attendance.</small>
+                </div>
+            </div>
+        {% elif not qr_code_path and request.method == 'POST' %}
+            <div class="message error" style="margin-top: 30px;">
+                <i class="fas fa-exclamation-triangle icon"></i> Could not generate QR code. Please try again.
+            </div>
+        {% endif %}
+    {% else %}
+        {# This line was already correctly fixed in a previous step #}
+        <p class="message info"><i class="fas fa-info-circle icon"></i> No active session configured. Please go to <a href="{{ url_for('lecturer_config_route') }}">Lecturer Configuration</a> to set up a session first.</p>
+    {% endif %}
+
+    <div class="text-center" style="margin-top: 30px;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">View Attendance Dashboard</a>
+    </div>
+</div>
+{% endblock %}

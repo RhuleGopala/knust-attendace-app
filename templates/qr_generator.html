@@ -6,58 +6,69 @@
 <div class="container">
     <h1 class="text-center">Generate Student QR Codes & Links</h1>
 
-    {% if message %}
-        <div class="message {{ message_type }}">
-            {% if message_type == "success" %}<i class="fas fa-check-circle icon"></i>{% endif %}
-            {% if message_type == "error" %}<i class="fas fa-times-circle icon"></i>{% endif %}
-            {{ message }}
-        </div>
-    {% endif %}
+    {# Flash messages are handled by base.html, which uses Bootstrap's alert classes #}
+    {# Removed the custom message div here as base.html handles it with Flask's flash #}
 
-    {% if current_session and current_session.latitude is not none %}
-        <div class="summary-box">
-            <h2>Active Session Details</h2>
-            <p><strong>Session ID:</strong> {{ current_session.session_id | default('N/A') }}</p>
-            <p><strong>Class Location:</strong> {{ current_session.latitude }}, {{ current_session.longitude }}</p>
-            <p><strong>Allowed Radius:</strong> {{ current_session.radius }} meters</p>
-            <small>QR codes generated below will be linked to this active session.</small>
+    {% if current_session and current_session.session_id %} {# Ensure session_id exists for an active session #}
+        <div class="summary-box alert alert-info"> {# Using Bootstrap alert-info for active session info #}
+            <h2><i class="fas fa-info-circle"></i> Active Session Details</h2>
+            <p><strong>Session ID:</strong> {{ current_session.session_id }}</p>
+            <p><strong>Class Location:</strong> {{ current_session.latitude | default('N/A') }}, {{ current_session.longitude | default('N/A') }}</p>
+            <p><strong>Allowed Radius:</strong> {{ current_session.radius | default('N/A') }} meters</p>
+            <small>QR codes generated below will link to this active session. Ensure students use their *unique* ID.</small>
         </div>
 
-        <form method="POST" action="{{ url_for('qr_generator_page') }}">
+        <form method="POST" action="{{ url_for('qr_generator_page') }}" class="form-card"> {# Added form-card class #}
             <h2>Generate QR for a Specific Student</h2>
-            <div>
-                <label for="student_id_qr">Student ID:</label>
-                <input type="text" id="student_id_qr" name="student_id_qr" required
-                        placeholder="e.g., S001">
-                <small>Enter a student ID to generate their unique check-in QR code.</small>
+            <p class="text-muted">Enter a student's unique ID to generate their personalized check-in QR code and link. Each student needs their own QR code to ensure accurate tracking.</p>
+            <div class="form-group">
+                <label for="student_id_qr"><i class="fas fa-user-tag"></i> Student ID:</label>
+                <input type="text" id="student_id_qr" name="student_id_qr" required autofocus
+                        placeholder="e.g., UGR/XXXX/XX, UGXXXXXXX" class="form-control"> {# Added form-control class #}
+                <small class="form-text text-muted">Example: `PHY_859`, `BIOC_001`, `10892345`. This should be the student's unique identifier.</small>
             </div>
-            <button type="submit" class="btn btn-primary">Generate QR Code & Link</button>
+            <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-qrcode"></i> Generate QR Code & Link</button>
         </form>
 
         {% if qr_code_path and generated_link %}
-            <div class="summary-box" style="margin-top: 30px;">
-                <h2>Generated for Student: {{ student_id_display }}</h2>
-                <div class="text-center">
-                    {# CORRECTED LINE: Removed redundant url_for('static', filename=...) #}
-                    <img src="{{ qr_code_path }}" alt="QR Code" style="width: 250px; height: 250px; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px;">
-                    <p style="font-size: 1.1em; word-break: break-all;">
-                        **Student Link:** <a href="{{ generated_link }}" target="_blank">{{ generated_link }}</a>
-                    </p>
-                    <small>Students can scan this QR code or click the link to check their attendance.</small>
+            <div class="summary-box card mt-4"> {# Using Bootstrap card class and margin #}
+                <div class="card-body">
+                    <h2 class="card-title text-center">Generated for Student: <span class="text-primary">{{ student_id_display }}</span></h2>
+                    <div class="text-center">
+                        <img src="{{ qr_code_path }}" alt="QR Code for {{ student_id_display }}" class="img-thumbnail qr-code-display"> {# Added img-thumbnail and qr-code-display classes #}
+                        <p class="mt-3">
+                            <strong>Student Link:</strong> <a href="{{ generated_link }}" target="_blank" class="text-break">{{ generated_link }}</a>
+                            <button class="btn btn-outline-secondary btn-sm ml-2" onclick="copyToClipboard('{{ generated_link }}')">
+                                <i class="far fa-copy"></i> Copy Link
+                            </button>
+                        </p>
+                        <small class="text-muted">Students can scan this QR code or click the link to check their attendance for session <strong>{{ current_session.session_id }}</strong>.</small>
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <strong>Important:</strong> Ensure each student receives *their specific* QR code/link. Do not distribute a single QR code to multiple students.
+                        </div>
+                    </div>
                 </div>
             </div>
         {% elif not qr_code_path and request.method == 'POST' %}
-            <div class="message error" style="margin-top: 30px;">
-                <i class="fas fa-exclamation-triangle icon"></i> Could not generate QR code. Please try again.
-            </div>
+            {# This message will now be handled by Flask's flash in app.py #}
         {% endif %}
     {% else %}
-        {# This line was already correctly fixed in a previous step #}
-        <p class="message info"><i class="fas fa-info-circle icon"></i> No active session configured. Please go to <a href="{{ url_for('lecturer_config_route') }}">Lecturer Configuration</a> to set up a session first.</p>
+        <p class="message info alert alert-info mt-4"><i class="fas fa-info-circle icon"></i> No active session configured. Please go to <a href="{{ url_for('lecturer_config_route') }}">Lecturer Configuration</a> to set up a session first.</p>
     {% endif %}
 
-    <div class="text-center" style="margin-top: 30px;">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">View Attendance Dashboard</a>
+    <div class="text-center mt-4"> {# Added margin-top #}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><i class="fas fa-tachometer-alt"></i> View Attendance Dashboard</a>
     </div>
 </div>
+
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            alert('Link copied to clipboard!');
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+            alert('Failed to copy link.');
+        });
+    }
+</script>
 {% endblock %}

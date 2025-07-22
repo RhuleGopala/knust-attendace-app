@@ -363,4 +363,295 @@ footer p {
         padding: 10px;
         font-size: 0.9em;
     }
+
+    /* Add to static/style.css */
+
+/* --- General Layout for Check-in Page --- */
+.main-container {
+    max-width: 500px; /* Make the content narrower for a focused look */
+    margin: 40px auto; /* Centered with top/bottom margin */
+    padding: 0 20px; /* Add horizontal padding for smaller screens */
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 80px); /* Adjust to make footer stick to bottom if page content is short */
+    box-sizing: border-box;
+}
+
+/* --- Header Styling --- */
+.page-header {
+    text-align: center;
+    padding: 30px 20px;
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 25px;
+}
+
+.knust-logo {
+    max-width: 120px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.page-header h1 {
+    font-size: 2.2em;
+    color: var(--primary-color);
+    margin-bottom: 0;
+}
+
+/* --- Content Area --- */
+.checkin-content {
+    flex-grow: 1; /* Allows content to expand and push footer down */
+    margin-bottom: 25px; /* Space between content and footer */
+}
+
+/* --- Session Info Card --- */
+.session-info-card {
+    background-color: var(--card-background);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 25px;
+    text-align: center;
+    border-left: 5px solid var(--info-color); /* A subtle accent */
+}
+
+.session-info-card p {
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+
+.session-info-card p strong {
+    color: var(--primary-color);
+}
+
+.session-info-card p span {
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.instruction-text {
+    font-style: italic;
+    color: var(--light-text-color);
+    font-size: 0.95em;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border-color);
+}
+
+/* --- Attendance Form Card --- */
+.attendance-form-card {
+    padding: 30px; /* Already defined in your form, but confirm */
+    /* Remove redundant background-color, border-radius, box-shadow if form already has it */
+}
+
+.attendance-form-card .form-group {
+    margin-bottom: 20px;
+}
+
+.attendance-form-card label {
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--primary-color); /* Make labels more prominent */
+    display: flex; /* For icon alignment */
+    align-items: center;
+}
+
+.attendance-form-card label .fas {
+    margin-right: 8px;
+    color: var(--info-color); /* Color for icons */
+}
+
+.attendance-form-card input[type="text"] {
+    padding: 14px; /* Slightly larger inputs */
+    font-size: 1.1em;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+/* --- Submit Button Styling (already good, just reinforce) --- */
+#submit-btn {
+    width: 100%; /* Make button full width */
+    padding: 15px; /* Larger padding for better touch target */
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-top: 20px; /* Space above button */
+    display: flex; /* For icon alignment */
+    align-items: center;
+    justify-content: center;
+}
+
+#submit-btn .fas {
+    margin-right: 10px;
+}
+
+/* --- Status Message Box --- */
+.status-message-box {
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    margin-top: 20px;
+    font-weight: 500;
+    display: flex; /* For icon alignment */
+    align-items: center;
+}
+
+.status-message-box .fas {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.info-message {
+    background-color: rgba(var(--info-color-rgb, 23, 162, 184), 0.1); /* Light info background */
+    color: var(--info-color);
+    border: 1px solid var(--info-color);
+}
+
+.success-message {
+    background-color: rgba(var(--success-color-rgb, 40, 167, 69), 0.1); /* Light success background */
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.error-message {
+    background-color: rgba(var(--error-color-rgb, 220, 53, 69), 0.1); /* Light error background */
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
+}
+
+/* Define RGB values for rgba colors (add to :root) */
+:root {
+    /* ... existing variables ... */
+    --info-color-rgb: 23, 162, 184;
+    --success-color-rgb: 40, 167, 69;
+    --error-color-rgb: 220, 53, 69;
+}
+
+/* --- Footer Styling --- */
+.page-footer { /* New class for specific footer styling on this page */
+    text-align: center;
+    padding: 15px 0;
+    color: var(--light-text-color);
+    font-size: 0.85em;
+    margin-top: auto; /* Push to bottom if content is short */
+}
+
+/* --- Responsive Adjustments for Check-in Page --- */
+@media (max-width: 600px) {
+    .main-container {
+        margin: 20px auto;
+        padding: 0 15px;
+    }
+
+    .page-header h1 {
+        font-size: 1.8em;
+    }
+
+    .knust-logo {
+        max-width: 100px;
+    }
+
+    .session-info-card, .attendance-form-card {
+        padding: 20px;
+    }
+
+    .attendance-form-card input[type="text"] {
+        padding: 12px;
+        font-size: 1em;
+    }
+
+    #submit-btn {
+        padding: 12px;
+        font-size: 1.1em;
+    }
+
+    .status-message-box {
+        padding: 12px 15px;
+        font-size: 0.9em;
+    }
+}
+
+/* Add to your existing static/style.css */
+
+/* Form Card Styling */
+.form-card {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-top: 30px; /* Space from session info */
+    border-top: 5px solid var(--primary-color); /* A subtle accent */
+}
+
+/* Specific styling for the QR code image display */
+.qr-code-display {
+    width: 250px; /* Fixed size for display consistency */
+    height: 250px;
+    object-fit: contain; /* Ensure image is fully visible */
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow); /* Add a subtle shadow to the image */
+}
+
+/* For form inputs (Bootstrap equivalent) */
+.form-control { /* This will style input fields */
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+    color: var(--text-color);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Primary color with transparency */
+}
+
+/* Form text for small hints */
+.form-text {
+    font-size: 0.875em; /* Standard Bootstrap small text size */
+    color: var(--light-text-color);
+    margin-top: 0.25rem;
+    display: block; /* Ensure it's on its own line */
+}
+
+/* Button block for full width */
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+/* Icon in button */
+.btn .fas {
+    margin-right: 8px; /* Space between icon and text */
+}
+
+/* Text styles (from Bootstrap) */
+.text-muted {
+    color: var(--light-text-color) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.text-break {
+    word-break: break-all; /* For long URLs */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .qr-code-display {
+        width: 200px;
+        height: 200px;
+    }
+}
+    
 }

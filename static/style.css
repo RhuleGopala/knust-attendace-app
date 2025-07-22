@@ -1,18 +1,36 @@
-/* static/style.css */
+/* static/style.css - MERGED AND REFINED */
 
-/* Variables for easy theme changes */
+/* Variables for easy theme changes - using Bootstrap's default values for consistency */
 :root {
-    --primary-color: #007bff; /* Changed to Bootstrap blue for consistency with info/primary btn */
-    --secondary-color: #6c757d; /* Changed to Bootstrap secondary grey */
-    --background-color: #F8F9FA; /* Lighter grey, Bootstrap light */
-    --card-background: #FFFFFF; /* White for cards/forms */
-    --text-color: #212529; /* Dark grey for text */
-    --light-text-color: #6c757d; /* Lighter grey for secondary text */
-    --border-color: #dee2e6; /* Light grey border */
-    --success-color: #28a745; /* Green for success messages */
-    --error-color: #dc3545; /* Red for error messages */
-    --info-color: #17a2b8; /* Blue for info messages */
-    --warning-color: #ffc107; /* Orange for warning messages */
+    --bs-primary: #007bff; /* Bootstrap blue */
+    --bs-secondary: #6c757d; /* Bootstrap secondary grey */
+    --bs-success: #28a745; /* Bootstrap green */
+    --bs-danger: #dc3545; /* Bootstrap red */
+    --bs-info: #17a2b8; /* Bootstrap info blue */
+    --bs-warning: #ffc107; /* Bootstrap orange */
+    --bs-light: #f8f9fa; /* Bootstrap light grey */
+    --bs-white: #ffffff; /* White */
+    --bs-dark: #212529; /* Dark grey for text (Bootstrap default) */
+
+    /* Custom variables derived from Bootstrap, or for specific overrides */
+    --primary-color: var(--bs-primary);
+    --secondary-color: var(--bs-secondary);
+    --background-color: var(--bs-light);
+    --card-background: var(--bs-white);
+    --text-color: var(--bs-dark); /* Default text color */
+    --light-text-color: var(--bs-secondary); /* Lighter grey for secondary text */
+    --border-color: #dee2e6; /* Bootstrap default border color (gray-300) */
+
+    --success-color: var(--bs-success);
+    --error-color: var(--bs-danger);
+    --info-color: var(--bs-info);
+    --warning-color: var(--bs-warning);
+
+    /* RGB values for rgba backgrounds */
+    --info-color-rgb: 23, 162, 184;
+    --success-color-rgb: 40, 167, 69;
+    --error-color-rgb: 220, 53, 69;
+
     --box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); /* Soft shadow, Bootstrap-like */
     --border-radius: .375rem; /* Rounded corners for elements, Bootstrap default */
     --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Changed for broader compatibility, similar to Inter if not imported */
@@ -38,27 +56,22 @@ body {
 }
 
 /* Header (using Bootstrap's navbar, so less custom CSS needed here) */
-/* .main-header is replaced by Bootstrap's .navbar and .bg-primary */
 .navbar-brand .fas { /* Style for the icon in the navbar brand */
     font-size: 1.2em;
 }
 
 /* Main Content Area */
-.content { /* This might be redundant if using <main> in base.html with Bootstrap padding */
-    flex-grow: 1;
-    padding: 40px 0;
-}
-
-/* Headings */
+/* .content is often replaced by padding utilities like py-4 on main */
+/* h1, h2, h3 - Bootstrap handles defaults, but you can override color */
 h1, h2, h3 {
     color: var(--primary-color); /* Changed to primary color for emphasis */
     font-weight: 600;
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Bootstrap mb-4 is 1.5rem, similar */
 }
 
-/* Forms and Inputs */
-form {
+/* --- Forms and Inputs --- */
+form { /* Base form styling */
     background-color: var(--card-background);
     padding: 30px;
     border-radius: var(--border-radius);
@@ -66,7 +79,7 @@ form {
     margin-top: 30px;
 }
 
-form div {
+form div { /* This specific rule might cause issues with Bootstrap's .mb-3. Prefer .form-group or .mb-3 */
     margin-bottom: 15px;
 }
 
@@ -76,6 +89,11 @@ label {
     font-weight: 500;
     color: var(--light-text-color);
 }
+label .fas { /* Style icons within labels */
+    margin-right: 8px;
+    color: var(--info-color);
+}
+
 
 input[type="text"],
 input[type="number"],
@@ -85,7 +103,7 @@ input[type="password"] {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 1em;
-    box-sizing: border-box; /* Ensures padding doesn't add to total width */
+    box-sizing: border-box;
     font-family: var(--font-family);
     color: var(--text-color);
 }
@@ -105,7 +123,8 @@ small {
     margin-top: 5px;
 }
 
-/* Buttons (relying on Bootstrap classes primarily, but ensuring overrides) */
+/* --- Buttons --- */
+/* Your custom btn styles are good overrides for Bootstrap defaults */
 .btn {
     display: inline-block;
     padding: 12px 25px;
@@ -117,24 +136,23 @@ small {
     text-align: center;
     text-decoration: none;
     transition: background-color 0.3s ease, transform 0.2s ease;
-    -webkit-appearance: none; /* For consistent button styling across browsers */
+    -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
 }
 
-.btn-primary { /* Overrides Bootstrap .btn-primary */
+.btn-primary {
     background-color: var(--primary-color);
     color: #fff;
     border-color: var(--primary-color);
 }
-
 .btn-primary:hover {
     background-color: #0056b3; /* Slightly darker primary */
     border-color: #0056b3;
     transform: translateY(-2px);
 }
 
-.btn-info { /* Overrides Bootstrap .btn-info */
+.btn-info {
     background-color: var(--info-color);
     color: #fff;
     border-color: var(--info-color);
@@ -145,7 +163,7 @@ small {
     transform: translateY(-2px);
 }
 
-.btn-warning { /* Overrides Bootstrap .btn-warning */
+.btn-warning {
     background-color: var(--warning-color);
     color: #212529; /* Dark text for warning background */
     border-color: var(--warning-color);
@@ -156,41 +174,54 @@ small {
     transform: translateY(-2px);
 }
 
-.btn-secondary { /* Uses existing variable, matches Bootstrap secondary */
+.btn-secondary {
     background-color: var(--secondary-color);
     color: #fff;
     border-color: var(--secondary-color);
     margin-left: 10px; /* Keep your margin if desired */
 }
-
 .btn-secondary:hover {
     background-color: #545b62; /* Slightly darker secondary */
     border-color: #4e555b;
     transform: translateY(-2px);
 }
 
-
 /* Buttons container */
 .buttons-container {
     display: flex;
-    justify-content: flex-end; /* Align buttons to the right */
-    gap: 10px; /* Space between buttons */
+    justify-content: flex-end;
+    gap: 10px;
     margin-top: 20px;
 }
 
-/* Messages (Success/Error/Info) - Using Bootstrap .alert classes */
-/* No need for custom .message, .message .icon, .message.success, etc. if using Bootstrap's .alert */
-/* The base.html already outputs alerts with Bootstrap classes like alert-success, alert-danger */
+/* Messages (Success/Error/Info) - If not using Bootstrap alerts, this is needed */
+/* If using Bootstrap's .alert, these are generally not needed for .message */
+.message { /* This is from your old code, Bootstrap's .alert will mostly replace it */
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+.message .icon { /* This icon styling will be overridden by Font Awesome within Bootstrap .alert */
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+.message.success { background-color: #d4edda; color: #155724; border: 1px solid #28a745; }
+.message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #dc3545; }
+.message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #17a2b8; }
 
-/* Summary Boxes / Cards - using Bootstrap .card classes */
-.summary-box { /* This might be redundant if using .card directly */
+
+/* Summary Boxes / Cards - Bootstrap's .card is preferred but these are for existing .summary-box */
+.summary-box { /* This aligns with Bootstrap card styling, but maintains your class name */
     background-color: var(--card-background);
     padding: 25px;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     margin-bottom: 20px;
+    border: 1px solid var(--border-color); /* Added for better definition */
 }
-
 .summary-box h2 {
     color: var(--primary-color);
     margin-bottom: 15px;
@@ -216,7 +247,7 @@ small {
 }
 
 .attendance-table th {
-    background-color: var(--primary-color); /* Changed to primary color */
+    background-color: var(--primary-color);
     color: #fff;
     font-weight: 600;
     text-transform: uppercase;
@@ -241,13 +272,13 @@ small {
     font-weight: 600;
 }
 
-/* Footer */
+/* Footer (Base.html handles this largely) */
 footer {
-    background-color: var(--secondary-color); /* Matches Bootstrap secondary */
+    background-color: var(--secondary-color);
     color: #fff;
     text-align: center;
     padding: 20px 0;
-    margin-top: auto; /* Pushes footer to the bottom */
+    margin-top: auto;
     font-size: 0.9em;
 }
 
@@ -260,13 +291,13 @@ footer p {
     text-align: center;
 }
 
-/* NEW STYLES FOR LANDING PAGE */
+/* --- NEW STYLES FROM PREVIOUS CONVERSATION (for QR Generator and Check-in) --- */
 .display-4 { /* Ensure display-4 is primary colored for consistency */
     color: var(--primary-color) !important;
 }
 
 .image-placeholder {
-    background-color: #f8f9fa; /* Light background */
+    background-color: var(--bs-light); /* Light background */
     border: 2px dashed var(--primary-color); /* Dashed primary color border */
     border-radius: var(--border-radius);
     padding: 15px;
@@ -280,7 +311,7 @@ footer p {
 .image-placeholder img {
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain; /* Ensures the image fits without cropping */
+    object-fit: contain;
 }
 
 .image-placeholder p {
@@ -292,82 +323,82 @@ footer p {
     min-height: 250px; /* Or adjust as desired */
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    /* Keep your existing media queries as they are generally good */
-    .main-header .container {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .main-nav {
-        margin-top: 15px;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .main-nav .nav-link {
-        margin: 5px 0;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .content {
-        padding: 20px 0;
-    }
-
-    form, .summary-box, .attendance-table {
-        margin: 20px 10px;
-        padding: 20px;
-    }
-
-    .buttons-container {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-    }
-
-    .btn {
-        width: 100%;
-        margin: 0 !important;
-    }
-
-    .attendance-table th,
-    .attendance-table td {
-        padding: 10px;
-        font-size: 0.9em;
-    }
+/* Form Card Styling (from qr_generator) */
+.form-card {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-top: 30px;
+    border-top: 5px solid var(--primary-color);
 }
 
-@media (max-width: 480px) {
-    .site-title {
-        font-size: 1.5em;
-    }
+/* Specific styling for the QR code image display */
+.qr-code-display {
+    width: 250px;
+    height: 250px;
+    object-fit: contain;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    display: block; /* Centering */
+    margin: 0 auto 20px auto;
+}
 
-    h1 {
-        font-size: 1.8em;
-    }
+/* For form inputs (Bootstrap equivalent) - if you use .form-control */
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+    color: var(--text-color);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
 
-    h2 {
-        font-size: 1.3em;
-    }
+.form-control:focus {
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
 
-    .message {
-        font-size: 0.9em;
-        padding: 12px 15px;
-    }
+/* Form text for small hints */
+.form-text {
+    font-size: 0.875em;
+    color: var(--light-text-color);
+    margin-top: 0.25rem;
+    display: block;
+}
 
-    input[type="text"],
-    input[type="number"] {
-        padding: 10px;
-        font-size: 0.9em;
-    }
+/* Button block for full width */
+.btn-block {
+    display: block;
+    width: 100%;
+}
 
-    /* Add to static/style.css */
+/* Icon in button */
+.btn .fas {
+    margin-right: 8px;
+}
 
-/* --- General Layout for Check-in Page --- */
-.main-container {
+/* Text styles (from Bootstrap) */
+.text-muted {
+    color: var(--light-text-color) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.text-break {
+    word-break: break-all;
+}
+
+/* --- Check-in Page specific styles --- */
+.main-container { /* This will now primarily be handled by base.html's .container */
     max-width: 500px; /* Make the content narrower for a focused look */
     margin: 40px auto; /* Centered with top/bottom margin */
     padding: 0 20px; /* Add horizontal padding for smaller screens */
@@ -377,7 +408,6 @@ footer p {
     box-sizing: border-box;
 }
 
-/* --- Header Styling --- */
 .page-header {
     text-align: center;
     padding: 30px 20px;
@@ -399,13 +429,11 @@ footer p {
     margin-bottom: 0;
 }
 
-/* --- Content Area --- */
 .checkin-content {
     flex-grow: 1; /* Allows content to expand and push footer down */
     margin-bottom: 25px; /* Space between content and footer */
 }
 
-/* --- Session Info Card --- */
 .session-info-card {
     background-color: var(--card-background);
     padding: 25px;
@@ -440,45 +468,28 @@ footer p {
     border-top: 1px dashed var(--border-color);
 }
 
-/* --- Attendance Form Card --- */
 .attendance-form-card {
-    padding: 30px; /* Already defined in your form, but confirm */
-    /* Remove redundant background-color, border-radius, box-shadow if form already has it */
+    padding: 30px;
 }
 
 .attendance-form-card .form-group {
     margin-bottom: 20px;
 }
 
-.attendance-form-card label {
-    font-size: 1em;
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: var(--primary-color); /* Make labels more prominent */
-    display: flex; /* For icon alignment */
-    align-items: center;
-}
-
-.attendance-form-card label .fas {
-    margin-right: 8px;
-    color: var(--info-color); /* Color for icons */
-}
-
 .attendance-form-card input[type="text"] {
-    padding: 14px; /* Slightly larger inputs */
+    padding: 14px;
     font-size: 1.1em;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
 }
 
-/* --- Submit Button Styling (already good, just reinforce) --- */
 #submit-btn {
-    width: 100%; /* Make button full width */
-    padding: 15px; /* Larger padding for better touch target */
+    width: 100%;
+    padding: 15px;
     font-size: 1.2em;
     font-weight: 700;
-    margin-top: 20px; /* Space above button */
-    display: flex; /* For icon alignment */
+    margin-top: 20px;
+    display: flex;
     align-items: center;
     justify-content: center;
 }
@@ -487,13 +498,12 @@ footer p {
     margin-right: 10px;
 }
 
-/* --- Status Message Box --- */
 .status-message-box {
     padding: 15px 20px;
     border-radius: var(--border-radius);
     margin-top: 20px;
     font-weight: 500;
-    display: flex; /* For icon alignment */
+    display: flex;
     align-items: center;
 }
 
@@ -503,155 +513,198 @@ footer p {
 }
 
 .info-message {
-    background-color: rgba(var(--info-color-rgb, 23, 162, 184), 0.1); /* Light info background */
+    background-color: rgba(var(--info-color-rgb), 0.1);
     color: var(--info-color);
     border: 1px solid var(--info-color);
 }
 
 .success-message {
-    background-color: rgba(var(--success-color-rgb, 40, 167, 69), 0.1); /* Light success background */
+    background-color: rgba(var(--success-color-rgb), 0.1);
     color: var(--success-color);
     border: 1px solid var(--success-color);
 }
 
 .error-message {
-    background-color: rgba(var(--error-color-rgb, 220, 53, 69), 0.1); /* Light error background */
+    background-color: rgba(var(--error-color-rgb), 0.1);
     color: var(--error-color);
     border: 1px solid var(--error-color);
 }
 
-/* Define RGB values for rgba colors (add to :root) */
-:root {
-    /* ... existing variables ... */
-    --info-color-rgb: 23, 162, 184;
-    --success-color-rgb: 40, 167, 69;
-    --error-color-rgb: 220, 53, 69;
-}
-
-/* --- Footer Styling --- */
-.page-footer { /* New class for specific footer styling on this page */
+.page-footer {
     text-align: center;
     padding: 15px 0;
     color: var(--light-text-color);
     font-size: 0.85em;
-    margin-top: auto; /* Push to bottom if content is short */
+    margin-top: auto;
 }
 
-/* --- Responsive Adjustments for Check-in Page --- */
-@media (max-width: 600px) {
-    .main-container {
-        margin: 20px auto;
-        padding: 0 15px;
-    }
+/* --- OLD DASHBOARD INLINE CSS MOVED HERE AND INTEGRATED --- */
+.session-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+.session-list li {
+    background-color: var(--card-background); /* Use variable */
+    margin-bottom: 10px;
+    padding: 15px; /* Slightly more padding */
+    border-radius: var(--border-radius); /* Use variable */
+    box-shadow: var(--box-shadow); /* Add shadow */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid var(--border-color); /* General border */
+}
+/* Specific status styling - using Bootstrap-like colors */
+.session-list li.active { background-color: rgba(var(--success-color-rgb), 0.1); border-left: 5px solid var(--success-color); }
+.session-list li.paused { background-color: rgba(var(--warning-color-rgb, 255, 193, 7), 0.1); border-left: 5px solid var(--warning-color); }
+.session-list li.closed { background-color: rgba(var(--error-color-rgb), 0.1); border-left: 5px solid var(--error-color); }
 
-    .page-header h1 {
-        font-size: 1.8em;
-    }
-
-    .knust-logo {
-        max-width: 100px;
-    }
-
-    .session-info-card, .attendance-form-card {
-        padding: 20px;
-    }
-
-    .attendance-form-card input[type="text"] {
-        padding: 12px;
-        font-size: 1em;
-    }
-
-    #submit-btn {
-        padding: 12px;
-        font-size: 1.1em;
-    }
-
-    .status-message-box {
-        padding: 12px 15px;
-        font-size: 0.9em;
-    }
+.session-details { 
+    flex-grow: 1; 
+    margin-right: 15px; /* More space */
+    margin-bottom: 5px;
+}
+.session-details .session-id { 
+    font-weight: bold; 
+    font-size: 1.1em;
+    word-break: break-all;
+    color: var(--primary-color); /* Highlight ID */
+}
+.session-details .status { 
+    text-transform: capitalize; 
+    margin-left: 10px;
+    font-style: italic;
+    font-weight: 500;
+}
+.session-details small {
+    display: block;
+    font-size: 0.9em;
+    color: var(--light-text-color);
+    margin-top: 5px;
+}
+.session-actions {
+    display: flex;
+    gap: 8px; /* Slightly more space */
+    flex-wrap: wrap;
+}
+.session-actions form {
+    display: inline-block;
+    margin: 0;
+}
+/* These buttons will be overridden by Bootstrap .btn classes, but keeping for reference */
+.session-actions button {
+    padding: 8px 15px; /* Adjust padding */
+    border: none;
+    border-radius: var(--border-radius); /* Use variable */
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+    transition: all 0.2s ease-in-out; /* Add transition */
+}
+.session-actions .btn-active { background-color: var(--success-color); color: white; }
+.session-actions .btn-pause { background-color: var(--warning-color); color: var(--text-color); } /* Text color for warning */
+.session-actions .btn-close { background-color: var(--error-color); color: white; }
+/* Add hover effects for these custom buttons if not using Bootstrap's .btn */
+.session-actions button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
 }
 
-/* Add to your existing static/style.css */
-
-/* Form Card Styling */
-.form-card {
+/* Dashboard Section (general division) */
+.dashboard-section {
     background-color: var(--card-background);
-    padding: 30px;
+    padding: 25px;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
-    margin-top: 30px; /* Space from session info */
-    border-top: 5px solid var(--primary-color); /* A subtle accent */
+    margin-bottom: 30px; /* Spacing between sections */
+    border-top: 4px solid var(--info-color); /* Subtle accent */
+}
+.dashboard-section h2 {
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color); /* Underline H2 */
+    padding-bottom: 10px;
+    color: var(--primary-color);
+}
+.dashboard-section p {
+    margin-bottom: 10px;
+}
+.dashboard-section p strong {
+    color: var(--primary-color); /* Highlight strong text */
 }
 
-/* Specific styling for the QR code image display */
-.qr-code-display {
-    width: 250px; /* Fixed size for display consistency */
-    height: 250px;
-    object-fit: contain; /* Ensure image is fully visible */
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow); /* Add a subtle shadow to the image */
-}
-
-/* For form inputs (Bootstrap equivalent) */
-.form-control { /* This will style input fields */
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 1em;
-    box-sizing: border-box;
-    font-family: var(--font-family);
-    color: var(--text-color);
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control:focus {
-    border-color: var(--primary-color);
-    outline: 0;
-    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Primary color with transparency */
-}
-
-/* Form text for small hints */
-.form-text {
-    font-size: 0.875em; /* Standard Bootstrap small text size */
-    color: var(--light-text-color);
-    margin-top: 0.25rem;
-    display: block; /* Ensure it's on its own line */
-}
-
-/* Button block for full width */
-.btn-block {
-    display: block;
-    width: 100%;
-}
-
-/* Icon in button */
-.btn .fas {
-    margin-right: 8px; /* Space between icon and text */
-}
-
-/* Text styles (from Bootstrap) */
-.text-muted {
-    color: var(--light-text-color) !important;
-}
-
-.text-primary {
-    color: var(--primary-color) !important;
-}
-
-.text-break {
-    word-break: break-all; /* For long URLs */
-}
-
-/* Responsive adjustments */
+/* --- Responsive Design (Consolidated) --- */
 @media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    .navbar-collapse {
+        text-align: center;
+    }
+    .navbar-nav .nav-item {
+        margin: 5px 0;
+    }
+    form, .dashboard-section, .session-info-card, .page-header, .form-card {
+        margin: 20px 0;
+        padding: 20px;
+    }
+    .buttons-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .btn {
+        width: 100%;
+        margin: 0 !important;
+    }
+    .attendance-table th,
+    .attendance-table td {
+        padding: 10px;
+        font-size: 0.85em;
+    }
     .qr-code-display {
-        width: 200px;
-        height: 200px;
+        width: 180px;
+        height: 180px;
+    }
+    /* Specific for old dashboard session list on smaller screens */
+    .session-list li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .session-details {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    .session-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    .session-actions button {
+        padding: 6px 12px;
+        font-size: 0.85em;
     }
 }
-    
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8em;
+    }
+    h2 {
+        font-size: 1.4em;
+    }
+    .navbar-brand {
+        font-size: 1.1em;
+    }
+    .attendance-table th,
+    .attendance-table td {
+        font-size: 0.8em;
+    }
+    .qr-code-display {
+        width: 150px;
+        height: 150px;
+    }
+    .knust-logo {
+        max-width: 80px;
+    }
 }

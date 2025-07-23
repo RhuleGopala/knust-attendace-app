@@ -81,14 +81,19 @@
     {# Footer #}
     <footer class="bg-secondary text-white py-3 mt-auto"> {# mt-auto for sticky footer #}
         <div class="container text-center">
+            {# Use g.current_time which is set by the @app.before_request in app.py #}
             <p>&copy; {{ g.current_time.year }} AttendancePro. All rights reserved.</p>
-            <p>Developed by Your Name/University Team</p>
+            <p>Developed for Kwame Nkrumah University of Science and Technology.</p>
         </div>
     </footer>
 
     {# Bootstrap Bundle with Popper (Minified) - for JS components like navbar toggler #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     
+    {# Flask-Moment JavaScript - crucial for dynamic time display if used in templates directly #}
+    {{ moment.include_moment() }}
+    {# This includes moment.js and initializes it with your timezone settings if configured #}
+
     {# Custom JavaScript (if any, will go here) #}
     {% block scripts %}{% endblock %}
 </body>

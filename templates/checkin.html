@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Check-in | KNUST Attendance</title>
+    {# Custom Stylesheet for checkin page #}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {# Font Awesome CSS #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {# jQuery (for AJAX) #}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = document.getElementById('submit-btn');
@@ -14,14 +18,33 @@
             const attendanceForm = document.getElementById('attendanceForm');
             const studentNameInput = document.getElementById('student_name');
             const studentIndexInput = document.getElementById('student_index');
+            // Get the session_id from the URL path.
+            // Assuming URL is like /checkin/SESSION_20230101_120000
+            const pathParts = window.location.pathname.split('/');
+            const sessionIdFromURL = pathParts[pathParts.length - 1]; // Gets the last part of the path
 
             if (submitBtn) {
-                submitBtn.addEventListener('click', getLocationAndSubmit);
+                // Check if geolocation is hidden by the server (e.g., session inactive)
+                if ({{ hide_geolocation | tojson }}) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.5';
+                    // The message_override will already be displayed by Jinja
+                } else {
+                    submitBtn.addEventListener('click', getLocationAndSubmit);
+                }
             }
 
-            // Function to display messages (success/error)
+            // Function to display messages (success/error/info)
             function displayMessage(message, type = 'info') {
                 statusMessage.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+                // Determine icon based on type
+                if (type === 'success') {
+                    statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+                } else if (type === 'error') {
+                    statusMessage.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+                } else {
+                    statusMessage.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+                }
                 statusMessage.className = `status-message-box ${type}-message`; // Apply styling classes
                 statusMessage.style.display = 'block'; // Make sure it's visible
             }
@@ -32,6 +55,14 @@
                     submitBtn.disabled = true;
                     submitBtn.style.opacity = '0.5';
                     return;
+                }
+
+                // Basic validation for name and index BEFORE getting location
+                const studentName = studentNameInput.value.trim();
+                const studentIndex = studentIndexInput.value.trim();
+                if (!studentName || !studentIndex) {
+                    displayMessage("Please fill in both your Name and Index Number.", 'error');
+                    return; // Stop the process if validation fails
                 }
 
                 displayMessage("Getting your location...", 'info');
@@ -45,29 +76,17 @@
                         
                         displayMessage("Location obtained. Submitting attendance...", 'info');
 
-                        // Get other form data
-                        const studentId = "{{ student_id }}";
-                        const studentName = studentNameInput.value.trim();
-                        const studentIndex = studentIndexInput.value.trim();
-
-                        // Basic validation for name and index
-                        if (!studentName || !studentIndex) {
-                            displayMessage("Please fill in both your Name and Index Number.", 'error');
-                            submitBtn.disabled = false;
-                            submitBtn.style.opacity = '1';
-                            return;
-                        }
-
                         $.ajax({
                             url: "{{ url_for('submit_attendance') }}",
                             type: "POST",
                             contentType: "application/json",
                             data: JSON.stringify({
-                                student_id: studentId,
+                                student_id: studentIndex, // Using index as ID for consistency in records
                                 student_name: studentName,
                                 student_index: studentIndex,
                                 latitude: latitude,
-                                longitude: longitude
+                                longitude: longitude,
+                                session_id: sessionIdFromURL // Pass the session ID to the server
                             }),
                             success: function(response) {
                                 displayMessage(response.message, response.status === 'success' ? 'success' : 'error');
@@ -142,8 +161,9 @@
                 </div>
             {% else %}
                 <div class="session-info-card">
-                    <p><strong>Your Student ID:</strong> <span>{{ student_id }}</span></p>
-                    <p><strong>Active Session ID:</strong> <span>{{ lecturer_conf.session_id }}</span></p>
+                    {# student_id is not directly passed from app.py to this template anymore,
+                       as the QR code just contains the session_id. Student enters their own ID. #}
+                    <p><strong>Active Session ID:</strong> <span>{{ session_id }}</span></p>
                     <p class="instruction-text">Please fill in your details and click "Mark Attendance" to submit.</p>
                 </div>
 
@@ -165,7 +185,8 @@
         </main>
 
         <footer class="page-footer"> {# Changed to page-footer for distinct styling #}
-            <p>&copy; {{ moment(now).format('YYYY') }} KNUST Attendance System. All rights reserved.</p>
+            {# Use g.current_time which is set by the @app.before_request in app.py #}
+            <p>&copy; {{ g.current_time.year }} KNUST Attendance System. All rights reserved.</p>
         </footer>
     </div>
 </body>

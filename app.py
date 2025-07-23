@@ -11,6 +11,7 @@ from dotenv import load_dotenv # For loading environment variables from .env loc
 from flask_moment import Moment # For displaying human-readable times in templates
 from functools import wraps # For decorators
 from werkzeug.security import generate_password_hash, check_password_hash # For password hashing
+import time # For retries
 
 # --- Configuration ---
 load_dotenv() # Load environment variables from .env file
@@ -24,6 +25,11 @@ moment = Moment(app)
 
 # Define Ghana timezone
 GHANA_TIMEZONE = pytz.timezone('Africa/Accra')
+
+# --- New: Define a higher default timeout for Google Sheets requests ---
+GOOGLE_SHEETS_REQUEST_TIMEOUT = 15 # Increased from 5 to 15 seconds
+MAX_RETRIES = 3
+RETRY_DELAY = 1 # seconds
 
 def get_ghana_time():
     """Returns the current datetime in Ghana's timezone."""
@@ -49,7 +55,8 @@ def send_to_google_sheets(data):
         print("Google Apps Script URL not configured. Skipping Google Sheets upload.")
         return False
     try:
-        response = requests.post(google_sheet_url, json=data, timeout=10)
+        # --- MODIFIED: Increased timeout for POST requests ---
+        response = requests.post(google_sheet_url, json=data, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
         response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
 
         try:
@@ -58,13 +65,13 @@ def send_to_google_sheets(data):
             if response_json.get('result') == 'error':
                 print(f"Apps Script reported an internal error: {response_json.get('message')}")
                 return False
-            
+
         except json.JSONDecodeError:
             print(f"ERROR: Google Apps Script returned non-JSON response! Status: {response.status_code}, Content: {response.text[:500]}...")
             return False
-        
+
         return True
-        
+
     except requests.exceptions.RequestException as e:
         print(f"ERROR sending to Google Sheets (RequestException): {e}")
         return False
@@ -72,26 +79,67 @@ def send_to_google_sheets(data):
         print(f"An unexpected error occurred when sending to Google Sheets: {e}")
         return False
 
-def get_session_status_from_gs(session_id):
+def get_session_details_from_gs(session_id):
     """
-    Fetches the status and full configuration of a specific session from Google Sheets.
-    Returns a dictionary with status, message, and session details if active/found.
+    Fetches the status and full configuration (lat, lon, radius) of a specific session from Google Sheets.
+    Returns a dictionary with status (e.g., 'active', 'paused', 'closed', 'not_found', 'error'),
+    message, and session details if available.
     """
     google_sheet_url = GOOGLE_SHEET_WEB_APP_URL
     if not google_sheet_url or google_sheet_url == "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE":
         print("Google Apps Script URL not configured. Cannot get session status.")
         return {'status': 'error', 'message': 'Google Sheets URL not configured.'}
-    try:
-        params = {'action': 'getSessionDetails', 'session_id': session_id} # Action to get full details
-        response = requests.get(google_sheet_url, params=params, timeout=5)
-        response.raise_for_status()
-        return response.json() # This should return status, lat, lon, radius, created_at, etc.
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting session status from GS for {session_id}: {e}")
-        return {'status': 'error', 'message': f'Network error: {e}'}
-    except json.JSONDecodeError as e:
-        print(f"Error decoding session status JSON for {session_id}: {e}. Raw: {response.text[:500]}")
-        return {'status': 'error', 'message': f'Invalid response from server: {e}'}
+
+    params = {'action': 'getSessionDetails', 'session_id': session_id}
+    last_error = None
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            print(f"Attempt {attempt + 1}/{MAX_RETRIES}: Fetching session details for '{session_id}' with params: {params}")
+            # --- MODIFIED: Increased timeout for GET requests ---
+            response = requests.get(google_sheet_url, params=params, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
+            response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+
+            response_json = response.json()
+            print(f"Raw response from get_session_details_from_gs for '{session_id}': {response_json}")
+
+            if response_json.get('result') == 'success' and response_json.get('session'):
+                session_data = response_json.get('session')
+                # Ensure required fields are present; default if not
+                return {
+                    'status': session_data.get('status', 'not_found'), # 'active', 'paused', 'closed', 'not_found'
+                    'message': response_json.get('message', 'Session details fetched.'),
+                    'session_id': session_data.get('session_id'),
+                    'latitude': float(session_data.get('latitude', 0.0)),
+                    'longitude': float(session_data.get('longitude', 0.0)),
+                    'radius': int(session_data.get('radius', 0))
+                }
+            else:
+                # If result is not success or session details are missing (e.g., session not found)
+                return {
+                    'status': response_json.get('status', 'not_found'), # GAS should ideally return 'not_found' if session_id is valid but not in sheet
+                    'message': response_json.get('message', 'Session not found or an unknown error occurred.')
+                }
+
+        except requests.exceptions.RequestException as e:
+            last_error = e
+            print(f"Error getting session details from GS for {session_id} (RequestException) on attempt {attempt + 1}: {e}")
+            if attempt < MAX_RETRIES - 1:
+                print(f"Retrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
+        except json.JSONDecodeError as e:
+            last_error = e
+            print(f"Error decoding session details JSON for {session_id} on attempt {attempt + 1}: {e}. Raw: {response.text[:500]}")
+            # No retry for JSON decode errors, as it suggests a consistent issue with the script's output
+            break
+        except Exception as e:
+            last_error = e
+            print(f"An unexpected error occurred while fetching session details for {session_id} on attempt {attempt + 1}: {e}")
+            # No retry for general exceptions, as it suggests a consistent issue
+            break
+
+    # If all retries fail or a non-retryable error occurs
+    return {'status': 'error', 'message': f'Failed to retrieve session details after {MAX_RETRIES} attempts. Last error: {last_error}'}
 
 
 # These functions are assumed to be in attendance_utils.py and qr_generator.py
@@ -114,7 +162,8 @@ def get_lecturer_config_defaults():
         'latitude': float(os.getenv('LECTURER_LATITUDE', 0.0)),
         'longitude': float(os.getenv('LECTURER_LONGITUDE', 0.0)),
         'radius': int(os.getenv('LECTURER_RADIUS', 0)),
-        'session_id': os.getenv('LECTURER_SESSION_ID', '')
+        'session_id': os.getenv('LECTURER_SESSION_ID', ''),
+        'status': 'unknown' # Default status for in-memory config
     }
     return config
 
@@ -147,7 +196,7 @@ def dashboard_login():
     """Handles lecturer login for the dashboard."""
     if request.method == 'POST':
         password = request.form.get('password')
-        
+
         if not os.getenv('DASHBOARD_PASSWORD'):
             flash("Dashboard password not set in server configuration. Access denied.", "error")
             return render_template('dashboard_login.html')
@@ -173,7 +222,7 @@ def dashboard():
     if google_sheet_url and google_sheet_url != "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE":
         try:
             # Fetch all sessions for display in the "All Created Attendances" section
-            all_sessions_response = requests.get(google_sheet_url, params={'action': 'getAllSessions'}, timeout=10)
+            all_sessions_response = requests.get(google_sheet_url, params={'action': 'getAllSessions'}, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
             all_sessions_response.raise_for_status()
             all_sessions_data = all_sessions_response.json()
             all_sessions = all_sessions_data.get('sessions', [])
@@ -192,7 +241,7 @@ def dashboard():
         flash("Google Sheet URL not configured. Cannot list sessions.", "info")
 
     # Get summary for the *currently active* session if one is configured in memory
-    current_conf = current_lecturer_config_in_memory 
+    current_conf = current_lecturer_config_in_memory
     session_id_filter = current_conf.get('session_id') # This is the active one from config page
 
     attendance_summary = {'totalScans': 0, 'presentCount': 0, 'absentCount': 0}
@@ -203,8 +252,8 @@ def dashboard():
         try:
             summary_params = {'action': 'getSummary', 'session_id': session_id_filter}
             print(f"Attempting to fetch attendance summary for active session with params: {summary_params}")
-            response = requests.get(google_sheet_url, params=summary_params, timeout=10)
-            response.raise_for_status() 
+            response = requests.get(google_sheet_url, params=summary_params, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
+            response.raise_for_status()
             summary_data = response.json()
             print(f"Successfully fetched attendance summary for active session: {summary_data}")
 
@@ -224,7 +273,7 @@ def dashboard():
         try:
             access_params = {'action': 'getAccessCounts', 'session_id': session_id_filter}
             print(f"Attempting to fetch portal access counts for active session with params: {access_params}")
-            access_response = requests.get(google_sheet_url, params=access_params, timeout=10)
+            access_response = requests.get(google_sheet_url, params=access_params, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
             access_response.raise_for_status()
             access_data = access_response.json()
             print(f"Successfully fetched portal access counts for active session: {access_data}")
@@ -251,7 +300,7 @@ def dashboard():
                             total_scans_session=attendance_summary['totalScans'],
                             present_count=attendance_summary['presentCount'],
                             absent_count=attendance_summary['absentCount'],
-                            attendance_data=attendance_data, 
+                            attendance_data=attendance_data,
                             total_portal_accesses=portal_access_counts['totalAccesses'],
                             unique_portal_students=portal_access_counts['uniqueStudents'],
                             all_sessions=all_sessions # Pass all sessions to the template
@@ -294,10 +343,11 @@ def lecturer_config_route():
             current_lecturer_config_in_memory['longitude'] = longitude
             current_lecturer_config_in_memory['radius'] = radius
             current_lecturer_config_in_memory['session_id'] = session_id
+            current_lecturer_config_in_memory['status'] = 'active' # Set status to active in memory immediately
 
             # Send to Google Sheets to create/update session status in the "Sessions" sheet
             session_data = {
-                'action': 'createOrUpdateSession', 
+                'action': 'createOrUpdateSession',
                 'session_id': session_id,
                 'latitude': latitude,
                 'longitude': longitude,
@@ -309,12 +359,12 @@ def lecturer_config_route():
                 flash("Configuration saved, but could not sync session state to Google Sheets. Check server logs.", "warning")
             else:
                 flash("Configuration saved successfully! This session is now active and recorded.", "success")
-            
+
             # Log this config change as an access event (optional, for tracking lecturer actions)
             log_data = {
-                'action': 'logAccess', 
+                'action': 'logAccess',
                 'session_id': session_id,
-                'student_id': 'LECTURER_CONFIG_UPDATE' 
+                'student_id': 'LECTURER_CONFIG_UPDATE'
             }
             send_to_google_sheets(log_data)
 
@@ -327,66 +377,83 @@ def lecturer_config_route():
 
     return render_template('lecturer_config.html', config=current_lecturer_config_in_memory)
 
-# app.py
-
-# ... (rest of your imports and setup)
-
-@app.route('/qr_generator', methods=['GET', 'POST']) # <--- CHANGE THIS LINE
+@app.route('/qr_generator', methods=['GET', 'POST'])
 @lecturer_login_required
 def qr_generator_page():
     config_for_qr = current_lecturer_config_in_memory
     qr_code_path = None
     generated_link = None
-    student_id_display = None # Initialize to None
+    student_id_display = None
 
     session_id_to_use = config_for_qr.get('session_id')
 
+    # If no session ID is even configured in memory, prompt the user
     if not session_id_to_use:
         flash("Please configure an active session on the Lecturer Config page first to generate a QR code.", "error")
+        # Ensure we pass the (empty) config for the template to render correctly
         return render_template('qr_generator.html', current_session=config_for_qr, qr_code_path=None, generated_link=None, student_id_display=None)
 
-    # Get the real-time status of the configured session from Google Sheet
-    session_status_response = get_session_status_from_gs(session_id_to_use)
-    session_status = session_status_response.get('status')
-    
+    # Get the real-time status and full details of the configured session from Google Sheet
+    session_details_from_gs = get_session_details_from_gs(session_id_to_use)
+    session_status = session_details_from_gs.get('status')
+
+    # If the session is not 'active' (could be 'paused', 'closed', 'not_found', or 'error')
     if session_status != 'active':
-        flash(f"The configured session '{session_id_to_use}' is currently '{session_status}'. Please make it active on the Dashboard or Lecturer Config page before generating a QR code.", "warning")
-        return render_template('qr_generator.html', current_session=config_for_qr, qr_code_path=None, generated_link=None, student_id_display=None)
+        flash_message = f"The configured session '{session_id_to_use}' is currently '{session_status}'. "
+        if session_status == 'not_found':
+            flash_message += "It might not have been recorded in the system, or has been deleted."
+        elif session_status == 'error':
+            flash_message += f"There was an error fetching its status: {session_details_from_gs.get('message', 'Unknown error')}. Please check network or try again."
+        else: # paused, closed
+            flash_message += "Please make it active on the Dashboard or Lecturer Config page before generating a QR code."
+
+        flash(flash_message, "warning")
+
+        # Merge fetched details into config_for_qr for display in the 'Active Session Details' box
+        config_for_qr.update({
+            'status': session_status,
+            'latitude': session_details_from_gs.get('latitude', config_for_qr.get('latitude')),
+            'longitude': session_details_from_gs.get('longitude', config_for_qr.get('longitude')),
+            'radius': session_details_from_gs.get('radius', config_for_qr.get('radius'))
+        })
+
+        return render_template('qr_generator.html',
+                               current_session=config_for_qr, # Pass the updated config
+                               qr_code_path=None,
+                               generated_link=None,
+                               student_id_display=None)
+
+    # If we reach here, the session is 'active' as per Google Sheets.
+    # We should update config_for_qr with the latest details from GS for display accuracy
+    config_for_qr.update({
+        'status': session_status,
+        'latitude': session_details_from_gs.get('latitude'),
+        'longitude': session_details_from_gs.get('longitude'),
+        'radius': session_details_from_gs.get('radius')
+    })
+
 
     if request.method == 'POST':
         student_id_qr = request.form.get('student_id_qr')
         if not student_id_qr:
             flash("Please enter a Student ID to generate the QR code.", "error")
-            return render_template('qr_generator.html', 
-                                    current_session=config_for_qr, 
-                                    qr_code_path=None, 
-                                    generated_link=None, 
+            return render_template('qr_generator.html',
+                                    current_session=config_for_qr,
+                                    qr_code_path=None,
+                                    generated_link=None,
                                     student_id_display=None)
-        
-        # The QR code generated here should point to the check-in page for the SESSION_ID
-        # and include the student_id_qr as a parameter for the checkin page.
-        # This allows the checkin page to pre-fill or use the student ID.
-        # Let's adjust the checkin route to receive student_id in the URL if needed,
-        # or simplify and just use the session_id as discussed previously,
-        # with the student entering their ID on the checkin page.
-        # Based on our last checkin.html, the student inputs their ID.
-        # So the QR should just point to the session_id checkin URL.
-        # The student_id_qr from the form here is primarily for naming the QR file.
 
         base_url = request.url_root.rstrip('/')
         # QR code should point to the check-in page with just the session ID
         checkin_url_for_qr = f"{base_url}/checkin/{session_id_to_use}"
 
-        # Use the student_id_qr to name the QR code file (ensure no leading/trailing spaces)
-        # Using student_id_qr for naming allows multiple QR codes per session.
         qr_code_filename_base = f"{session_id_to_use.strip()}_{student_id_qr.strip()}"
 
         try:
-            # generate_qr_code now takes data_string and filename_prefix
             qr_code_path_relative = generate_qr_code(checkin_url_for_qr, filename_prefix=qr_code_filename_base)
             qr_code_path = url_for('static', filename=qr_code_path_relative)
-            generated_link = checkin_url_for_qr # This is the link encoded in the QR code
-            student_id_display = student_id_qr # Set for display in the template
+            generated_link = checkin_url_for_qr
+            student_id_display = student_id_qr
 
             flash(f"QR Code generated for Student: {student_id_qr}, Session: {session_id_to_use}!", "success")
 
@@ -395,7 +462,7 @@ def qr_generator_page():
             print(f"Error generating QR code for {student_id_qr}: {e}")
             qr_code_path = None
             generated_link = None
-            student_id_display = None # Clear if generation failed
+            student_id_display = None
 
     # This part handles the initial GET request to load the page
     # or re-renders after a POST submission.
@@ -422,8 +489,9 @@ def student_checkin(session_id_from_qr): # Parameter name changed
         hide_geolocation = True
     else:
         # Fetch the full session details from Google Sheets using the session_id_from_qr
-        session_details_response = get_session_status_from_gs(session_id_from_qr)
+        session_details_response = get_session_details_from_gs(session_id_from_qr)
         session_status = session_details_response.get('status')
+        session_message = session_details_response.get('message', 'Unknown error.')
 
         if session_status == 'active':
             # Populate lecturer_conf_for_template with the active session's details from GS
@@ -434,21 +502,22 @@ def student_checkin(session_id_from_qr): # Parameter name changed
                 'longitude': session_details_response.get('longitude'),
                 'radius': session_details_response.get('radius')
             }
-            
+
             # Log initial portal access for this session (before student enters ID)
             access_data = {
-                'action': 'logAccess', 
-                'session_id': session_id_from_qr, 
+                'action': 'logAccess',
+                'session_id': session_id_from_qr,
                 'student_id': 'PORTAL_ACCESS_INITIAL' # Generic ID for initial page load
             }
             try:
-                requests.post(google_sheet_url, json=access_data, timeout=3) 
+                # --- MODIFIED: Increased timeout for logging initial access ---
+                requests.post(google_sheet_url, json=access_data, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
                 print(f"Logged initial portal access for session {session_id_from_qr} to Google Sheet.")
             except requests.exceptions.RequestException as e:
                 print(f"Error logging initial portal access for session {session_id_from_qr} to Google Sheet: {e}")
 
         elif session_status == 'error':
-            message_override = f"System error: Could not verify session status. {session_details_response.get('message')}. Please try again later."
+            message_override = f"System error: Could not verify session status. {session_message}. Please try again later."
             hide_geolocation = True
         elif session_status == 'not_found':
             message_override = f"Attendance session '{session_id_from_qr}' not found or never started. Please contact your lecturer."
@@ -480,8 +549,8 @@ def submit_attendance():
 
     # Fetch the actual lecturer configuration for THIS specific session from Google Sheets
     lecturer_conf = {} # Initialize empty
-    session_details_response = get_session_status_from_gs(session_id)
-    
+    session_details_response = get_session_details_from_gs(session_id)
+
     if session_details_response.get('status') == 'active':
         lecturer_conf['latitude'] = session_details_response.get('latitude')
         lecturer_conf['longitude'] = session_details_response.get('longitude')
@@ -498,21 +567,22 @@ def submit_attendance():
     class_lat = lecturer_conf.get('latitude')
     class_lon = lecturer_conf.get('longitude')
     allowed_radius = lecturer_conf.get('radius')
-    
+
     google_sheet_url = GOOGLE_SHEET_WEB_APP_URL
     if google_sheet_url and google_sheet_url != "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE":
         # Check for duplicate submission for THIS student in THIS active session
         check_params = {
-            'action': 'checkStudentAttendance', 
+            'action': 'checkStudentAttendance',
             'student_id': student_id,
             'session_id': session_id # Use the session_id from the student's submission
         }
         try:
             print(f"Checking for duplicate attendance for student {student_id}, session {session_id}...")
-            check_response = requests.get(google_sheet_url, params=check_params, timeout=5)
+            # --- MODIFIED: Increased timeout for checkStudentAttendance ---
+            check_response = requests.get(google_sheet_url, params=check_params, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
             check_response.raise_for_status()
             check_data = check_response.json()
-            
+
             print(f"Apps Script checkStudentAttendance response: {check_data}")
 
             if check_data.get('hasAttended'):
@@ -603,7 +673,8 @@ def update_session_status():
             'session_id': session_id,
             'status': new_status
         }
-        response = requests.post(google_sheet_url, json=update_data, timeout=10)
+        # --- MODIFIED: Increased timeout for updateSessionStatus ---
+        response = requests.post(google_sheet_url, json=update_data, timeout=GOOGLE_SHEETS_REQUEST_TIMEOUT)
         response.raise_for_status()
         response_json = response.json()
 
@@ -611,36 +682,25 @@ def update_session_status():
             flash(f"Session '{session_id}' status updated to '{new_status}' successfully!", "success")
             # If the session being updated is the one in lecturer_config_in_memory, update its status too
             if current_lecturer_config_in_memory.get('session_id') == session_id:
-                # No direct 'status' field in current_lecturer_config_in_memory, but useful to know
-                # if you add it or rely on refreshing dashboard
-                pass 
+                current_lecturer_config_in_memory['status'] = new_status # Update local in-memory status
         else:
             flash(f"Failed to update session status: {response_json.get('message', 'Unknown error')}", "error")
-            print(f"Failed to update session status. Apps Script response: {response_json}")
+            print(f"Failed to update session status for {session_id} to {new_status}. GAS Response: {response_json}")
 
     except requests.exceptions.RequestException as e:
         flash(f"Network error updating session status: {e}", "error")
-        print(f"Network error updating session status: {e}")
+        print(f"Network error updating session status for {session_id}: {e}")
     except json.JSONDecodeError as e:
-        flash(f"Invalid response from Google Sheet when updating session status: {e}", "error")
-        print(f"Invalid response from Google Sheet when updating session status: {e}. Raw: {response.text[:500]}")
+        flash(f"Error decoding response updating session status: {e}", "error")
+        print(f"Error decoding JSON updating session status for {session_id}: {e}. Raw: {response.text[:500]}")
     except Exception as e:
         flash(f"An unexpected error occurred: {e}", "error")
-        print(f"An unexpected error occurred when updating session status: {e}")
+        print(f"An unexpected error occurred updating session status for {session_id}: {e}")
 
     return redirect(url_for('dashboard'))
 
-
-@app.errorhandler(404)
-def page_not_found(e):
-    """Custom 404 error page."""
-    return render_template('404.html'), 404
-
 if __name__ == '__main__':
-    # Create the directory for QR codes if it doesn't exist
-    qr_codes_dir = os.path.join(app.root_path, 'static', 'qr_codes')
-    os.makedirs(qr_codes_dir, exist_ok=True)
-
-    # Run the Flask app
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    # Create a 'qr_codes' directory if it doesn't exist
+    if not os.path.exists('static/qr_codes'):
+        os.makedirs('static/qr_codes')
+    app.run(debug=True)

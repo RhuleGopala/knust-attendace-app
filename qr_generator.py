@@ -1,31 +1,44 @@
+# qr_generator.py
 import qrcode
 import os
-# from flask import url_for # No longer directly needed here as app.py handles url_for
+from datetime import datetime
 
-# Directory where QR codes will be saved
-# Note: This path is relative to the project root, where app.py is.
+# Ensure this directory exists relative to where your app.py runs
 QR_CODE_DIR = 'static/qr_codes'
+if not os.path.exists(QR_CODE_DIR):
+    os.makedirs(QR_CODE_DIR)
 
-def generate_qr_code(data_string, student_id="unknown"):
+def generate_qr_code(data: str, filename_prefix: str = "qr_code") -> str:
     """
-    Generates a QR code for the given data_string and saves it to a file.
-    Returns the relative path to the QR code image within the static folder,
-    suitable for Flask's url_for('static', filename=...)
+    Generates a QR code for the given data and saves it to a file.
+
+    Args:
+        data (str): The data to encode in the QR code (e.g., a URL).
+        filename_prefix (str): A prefix for the filename. Defaults to "qr_code".
+
+    Returns:
+        str: The relative path to the generated QR code image (e.g., 'qr_codes/my_qr_code.png').
     """
-    # Ensure the directory exists
-    # The full path needs to be created from the app's root directory.
-    # app.py's __main__ block now ensures this directory exists.
-    if not os.path.exists(QR_CODE_DIR):
-        os.makedirs(QR_CODE_DIR)
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
 
-    # Generate a unique filename for the QR code
-    filename = f"{student_id}_qr.png"
-    filepath = os.path.join(QR_CODE_DIR, filename)
+        img = qr.make_image(fill_color="black", back_color="white")
 
-    # Generate QR code
-    img = qrcode.make(data_string)
-    img.save(filepath)
+        # Create a unique filename using the prefix and timestamp
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+        filename = f"{filename_prefix}_{timestamp}.png"
+        filepath = os.path.join(QR_CODE_DIR, filename)
 
-    # Return the path relative to the static folder (e.g., 'qr_codes/S001_qr.png')
-    # This is what Flask's url_for('static', filename=...) expects.
-    return os.path.join(os.path.basename(QR_CODE_DIR), filename)
+        img.save(filepath)
+        print(f"QR code saved to: {filepath}")
+        return os.path.join('qr_codes', filename) # Return path relative to static/
+    except Exception as e:
+        print(f"Error in generate_qr_code: {e}")
+        raise # Re-raise the exception to be caught by the Flask app

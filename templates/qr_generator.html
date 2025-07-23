@@ -15,16 +15,16 @@
             <p><strong>Session ID:</strong> {{ current_session.session_id }}</p>
             <p><strong>Class Location:</strong> {{ current_session.latitude | default('N/A') }}, {{ current_session.longitude | default('N/A') }}</p>
             <p><strong>Allowed Radius:</strong> {{ current_session.radius | default('N/A') }} meters</p>
-            <small>QR codes generated below will link to this active session. Ensure students use their *unique* ID.</small>
+            <small>QR codes generated below will link to this active session.</small>
         </div>
 
         <form method="POST" action="{{ url_for('qr_generator_page') }}" class="form-card"> {# Added form-card class #}
-            <h2>Generate QR for a Specific Student</h2>
-            <p class="text-muted">Enter a student's unique ID to generate their personalized check-in QR code and link. Each student needs their own QR code to ensure accurate tracking.</p>
+            <h2>Generate QR for Students</h2>
+            <p class="text-muted">Enter a sessions's unique ID to generate their personalized check-in QR code and link. Each student would check in once to ensure accurate tracking.</p>
             <div class="form-group">
-                <label for="student_id_qr"><i class="fas fa-user-tag"></i> Student ID:</label>
+                <label for="student_id_qr"><i class="fas fa-user-tag"></i> Session ID:</label>
                 <input type="text" id="student_id_qr" name="student_id_qr" required autofocus
-                        placeholder="e.g., UGR/XXXX/XX, UGXXXXXXX" class="form-control"> {# Added form-control class #}
+                        placeholder="e.g., KNUST/XXXX/XX, KNUSTXXXXXXX" class="form-control"> {# Added form-control class #}
                 <small class="form-text text-muted">Example: `PHY_859`, `BIOC_001`, `10892345`. This should be the student's unique identifier.</small>
             </div>
             <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-qrcode"></i> Generate QR Code & Link</button>
@@ -44,7 +44,7 @@
                         </p>
                         <small class="text-muted">Students can scan this QR code or click the link to check their attendance for session <strong>{{ current_session.session_id }}</strong>.</small>
                         <div class="alert alert-warning mt-3" role="alert">
-                            <strong>Important:</strong> Ensure each student receives *their specific* QR code/link. Do not distribute a single QR code to multiple students.
+                            <strong>Important:</strong> Ensure each student receives the QR code/link. Each student can only check in for their attendance once..
                         </div>
                     </div>
                 </div>
